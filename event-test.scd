@@ -43,11 +43,13 @@
                 id: id,
                 // instrument object
                 harpa: ~makeHarpa.(id),
+
+                instrumentOSC: nil,
                 // OSC functions listening to new object's address
                 oscFunctions: {
                     |self|
-                    [
-                        OSCFunc.newMatching({
+                    self.instrumentOSC = [
+                        OSCdef.newMatching((UniqueID.next).asSymbol, {
                             // incoming message to instrument instance's address
                             |msg|
 
@@ -55,20 +57,26 @@
 
                             // command
                             command = msg[1].asSymbol;
-                            // this osc function
-                            oscFunc = self[\oscFunctions];
 
                             if(command == \destroy, {
+                                // deactivate controls
                                 self.harpa.keyboardDeactivate;
                                 self.harpa.ccDeactivate;
-                                oscFunc.do{ |item| item.free };
-                                ~harpas.removeAt(self.id)
+                                // remove synths and groups
+                                self.harpa.removeSynths;
+                                // cut osc communication
+                                // self.instrumentOSC.do{ |item| item.free };
+                                // self.instrumentOSC = nil;
+                                // remove instrument instance
+                                // ~harpas.removeAt(self.id);
+                                // self.harpa.postln;
+
                                 // warn if "command" is unknown
                             }, {["unknown command", self.id, command].warn})
                         // path for new instance
                         }, (path +/+ self.id.asString).asSymbol),
 
-                        OSCFunc.newMatching({
+                        OSCdef.newMatching((UniqueID.next).asSymbol, {
                             |msg|
 
                             var command;
@@ -85,7 +93,7 @@
                             })
                         }, (path +/+ self.id.asString +/+ "keyboard").asSymbol),
 
-                        OSCFunc.newMatching({
+                        OSCdef.newMatching((UniqueID.next).asSymbol, {
                             |msg|
 
                             var command;
@@ -104,8 +112,9 @@
                     ]
                 }
             );
-            // runs the oscFunctions method and stores it as an array at the same key
-            ~harpas[id][\oscFunctions] = ~harpas[id].oscFunctions;
+            // runs the oscFunctions method
+            ~harpas[id].oscFunctions;
+            // ~harpas[id].instrumentOSC.postln
         });
         [command, id].postln
         // path for instrument class
@@ -120,6 +129,7 @@
 ~test.sendMsg("**/harpa1/cc", "activate")
 ~test.sendMsg("**/harpa1/cc", "deactivate")
 ~test.sendMsg("**/harpa1", "destroy")
+~harpas[\harpa1].postln
 
 ~test.sendMsg("/instruments/harpa", "create", "harpa2")
 ~test.sendMsg("**/harpa2/keyboard", "activate")
@@ -132,3 +142,4 @@
 OSCFunc({ |msg| msg.postln }, '/test')
 
 
+~harpas.value(\harpa1)

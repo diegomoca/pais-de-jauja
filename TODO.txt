@@ -1,9 +1,7 @@
 TODO
 1.0.0
-- add unload instrument capabilites
-    - fix destroy command
 - load python code for instrument instances from cli
-- add harpa as a module (git)
+- clean up code
 
 X.X.X
 - learn neovim
@@ -15,3 +13,6 @@ DONE
 X create main cli app
 X add load instrument capabilities
 X add posibility to disconnect partially or completely from interface
+X add unload instrument capabilites
+    X fix destroy command
+X add harpa as a module (git)

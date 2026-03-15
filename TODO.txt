@@ -1,11 +1,17 @@
 TODO
-- fix destroy command
-
-- create main cli app
-- add load instrument capabilities
+1.0.0
 - add unload instrument capabilites
-- add posibility to disconnect partially or completely from interface
+    - fix destroy command
+- load python code for instrument instances from cli
+- add harpa as a module (git)
 
+X.X.X
 - learn neovim
 - learn openFrameworks
 - record buses
+- create agent
+
+DONE
+X create main cli app
+X add load instrument capabilities
+X add posibility to disconnect partially or completely from interface

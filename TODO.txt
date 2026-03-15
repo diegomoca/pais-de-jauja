@@ -1,0 +1,11 @@
+TODO
+- fix destroy command
+
+- create main cli app
+- add load instrument capabilities
+- add unload instrument capabilites
+- add posibility to disconnect partially or completely from interface
+
+- learn neovim
+- learn openFrameworks
+- record buses

@@ -8,7 +8,7 @@ from osc4py3.as_eventloop import *
 from osc4py3 import oscmethod as osm # needed to receive OSC
 
 
-import instruments.harpa.source.frequenciestest as harpa
+import instruments.harpa.source.frequencies as harpa
 
 
 console = Console()
@@ -78,7 +78,7 @@ print("OSC Server started. Ready to receive messages!")
 threading.Thread(target=oscEventLoop).start()
 
 # run supercollider script
-subprocess.Popen(['sclang', 'event-test.scd'])
+subprocess.Popen(['sclang', 'main-event.scd'])
 
 # osc confirmation from supercollider
 osc_method('/instruments', instrumentsConfirmation)

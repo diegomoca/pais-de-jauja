@@ -4,7 +4,7 @@ from osc4py3.as_eventloop import * # needed to send and receive OSC
 from osc4py3 import oscbuildparse
 
 
-import instruments.harpa.source.frequenciestest as harpa
+import instruments.harpa.source.frequencies as harpa
 
 finished = False
 # define background event loop to process osc

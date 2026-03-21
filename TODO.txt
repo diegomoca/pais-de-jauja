@@ -1,6 +1,4 @@
 TODO
-1.0.0
-- clean up code
 
 X.X.X
 - implement textual
@@ -20,3 +18,5 @@ X add unload instrument capabilites
 X add harpa as a module (git)
 X load python code for instrument instances from repl
 X implement rest of osc commands
+X clean up code
+X 1.0.0

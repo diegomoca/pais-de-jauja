@@ -18,7 +18,7 @@ s.waitForBoot{
     MIDIClient.init;
     MIDIIn.connectAll;
 
-    Require("instruments/harpa/source/main-test");
+    Require("instruments/harpa/source/main");
 
     // OSC client to send messages to python
     ~pyOSCClient = NetAddr("localhost", 13131);

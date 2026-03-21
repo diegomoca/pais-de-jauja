@@ -1,2 +1,26 @@
+# macOS
 .DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Project assets not meant for version control
+*.mp3
+*.wav
+
+# Virtual environments
+.venv/
+venv/
+
+# Editors and IDEs
+.vscode/
+
+# Runtime files
+*.log
 

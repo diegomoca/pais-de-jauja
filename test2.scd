@@ -1,1 +1,1 @@
-(2+2).postln
+OSCFunc({ |msg| msg.postln }, '/test')

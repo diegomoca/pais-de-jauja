@@ -1,25 +1,38 @@
-(   
-    // server gui
-    s.makeWindow;
-    s.window.alwaysOnTop_(true);
+s.waitForBoot{  
+
+    // // TEST GUI
+    // s.makeWindow;
+    // s.window.alwaysOnTop_(true);
+    // // node tree graph
+    // ~plotTree = View(nil, Rect(0, 0, 300, 1000)).front.alwaysOnTop_(true);
+    // s.plotTreeView(parent: ~plotTree);
+    // // signal meter
+    // ~meter = ServerMeter.new(s, 0, 2);
+    // ~meter.window.alwaysOnTop_(true);
 
 
-    // node tree graph
-    ~plotTree = View(nil, Rect(0, 0, 300, 1000)).front.alwaysOnTop_(true);
-    s.plotTreeView(parent: ~plotTree);
+    // SCRIPT
+    thisProcess.openUDPPort(13130);
+    ("langPort: " ++ NetAddr.langPort).postln;
 
-
-    // signal meter
-    ~meter = ServerMeter.new(s, 0, 2);
-    ~meter.window.alwaysOnTop_(true);
-)
-
-(s.waitForBoot{   
     MIDIClient.init;
     MIDIIn.connectAll;
 
     Require("instruments/harpa/source/main-test");
 
+    // OSC client to send messages to python
+    ~pyOSCClient = NetAddr("localhost", 13131);
+    OSCdef.newMatching((UniqueID.next).asSymbol, {
+        |msg|
+        var command;
+        // command
+        command = msg[1].asSymbol;
+        msg.postln;
+        if(command == \ready, {
+            ~pyOSCClient.sendMsg("/instruments", "confirmed");
+        })
+    }, '/instruments');
+    ~pyOSCClient.sendMsg("/instruments", "ready");
     // OSC UI for external control
     // dictionary containing instrument objects and OSC receivers
     ~harpas = ();
@@ -34,13 +47,15 @@
             command = msg[1].asString,
             id      = msg[2].asSymbol;
 
+        msg.postln;
+
         // if command is "create" then create a new object and an OSC address
         // respective to that object and store them in an array inside dictionary
         switch(command, "create", {
             // dictionary inside dictionary
             ~harpas[id] = (
                 //instrument id
-                id: id,
+                id: id, 
                 // instrument object
                 harpa: ~makeHarpa.(id),
 
@@ -49,7 +64,7 @@
                 oscFunctions: {
                     |self|
                     self.instrumentOSC = [
-                        OSCdef.newMatching((UniqueID.next).asSymbol, {
+                        OSCdef.newMatching((self.id ++ "instance").asSymbol, {
                             // incoming message to instrument instance's address
                             |msg|
 
@@ -64,19 +79,19 @@
                                 self.harpa.ccDeactivate;
                                 // remove synths and groups
                                 self.harpa.removeSynths;
+                                // TODO check what I need to reactivate here
                                 // cut osc communication
-                                // self.instrumentOSC.do{ |item| item.free };
-                                // self.instrumentOSC = nil;
+                                self.instrumentOSC.do{ |item| item.free };
+                                self.instrumentOSC = nil;
                                 // remove instrument instance
-                                // ~harpas.removeAt(self.id);
-                                // self.harpa.postln;
+                                ~harpas.removeAt(self.id);
 
                                 // warn if "command" is unknown
                             }, {["unknown command", self.id, command].warn})
                         // path for new instance
                         }, (path +/+ self.id.asString).asSymbol),
 
-                        OSCdef.newMatching((UniqueID.next).asSymbol, {
+                        OSCdef.newMatching((self.id ++ "keyboard").asSymbol, {
                             |msg|
 
                             var command;
@@ -93,7 +108,7 @@
                             })
                         }, (path +/+ self.id.asString +/+ "keyboard").asSymbol),
 
-                        OSCdef.newMatching((UniqueID.next).asSymbol, {
+                        OSCdef.newMatching((self.id ++ "cc").asSymbol, {
                             |msg|
 
                             var command;
@@ -108,38 +123,68 @@
                             }, {
                                 ["unknown command", self.id, command].warn
                             })
-                        }, (path +/+ self.id.asString +/+ "cc").asSymbol)
+                        }, (path +/+ self.id.asString +/+ "cc").asSymbol),
+
+                        OSCdef.newMatching((self.id ++ "freqs").asSymbol, {
+                            |msg|
+                            postln(msg[1..]);
+                            self.harpa.init.striFreq = msg[1..];
+                            self.harpa.init.striFreq.do({
+                                |item, count|
+                                self.harpa.init.keyArr[count].set(\striFreq, item)
+                            })
+                        }, (path +/+ self.id.asString +/+ "freqs").asSymbol)
                     ]
                 }
             );
             // runs the oscFunctions method
             ~harpas[id].oscFunctions;
             // ~harpas[id].instrumentOSC.postln
+            ~pyOSCClient.sendMsg(path +/+ id.asString, "created")
         });
         [command, id].postln
         // path for instrument class
     }, '/instruments/harpa');
-})
 
-~test = NetAddr("localhost", 57120);
+    OSCdef.newMatching(\instruments, {
+        |msg|
 
-~test.sendMsg("/instruments/harpa", "create", "harpa1")
-~test.sendMsg("**/harpa1/keyboard", "activate")
-~test.sendMsg("**/harpa1/keyboard", "deactivate")
-~test.sendMsg("**/harpa1/cc", "activate")
-~test.sendMsg("**/harpa1/cc", "deactivate")
-~test.sendMsg("**/harpa1", "destroy")
-~harpas[\harpa1].postln
+        var command;
 
-~test.sendMsg("/instruments/harpa", "create", "harpa2")
-~test.sendMsg("**/harpa2/keyboard", "activate")
-~test.sendMsg("**/harpa2/keyboard", "deactivate")
-~test.sendMsg("**/harpa2/cc", "activate")
-~test.sendMsg("**/harpa2/cc", "deactivate")
-~test.sendMsg("**/harpa2", "destroy")
+        // command
+        command = msg[1].asSymbol;
 
-
-OSCFunc({ |msg| msg.postln }, '/test')
+        if(command == \kill, {
+            MIDIdef.freeAll;
+            OSCdef.freeAll;
+            CmdPeriod.run;
+            AppClock.sched(0.15, { 0.exit });
+        })
+    }, '/instruments')
+}
 
 
-~harpas.value(\harpa1)
+
+
+
+
+// ~test = NetAddr("localhost", 57120);
+
+// ~test.sendMsg("/instruments/harpa", "create", "harpa1")
+// ~test.sendMsg("**/harpa1/keyboard", "activate")
+// ~test.sendMsg("**/harpa1/keyboard", "deactivate")
+// ~test.sendMsg("**/harpa1/cc", "activate")
+// ~test.sendMsg("**/harpa1/cc", "deactivate")
+// ~test.sendMsg("**/harpa1", "destroy")
+// ~harpas[\harpa1].postln
+
+// ~test.sendMsg("/instruments/harpa", "create", "harpa2")
+// ~test.sendMsg("**/harpa2/keyboard", "activate")
+// ~test.sendMsg("**/harpa2/keyboard", "deactivate")
+// ~test.sendMsg("**/harpa2/cc", "activate")
+// ~test.sendMsg("**/harpa2/cc", "deactivate")
+// ~test.sendMsg("**/harpa2", "destroy")
+
+// OSCFunc({ |msg| msg.postln }, '/test')
+
+// ~harpas.value(\harpa1)

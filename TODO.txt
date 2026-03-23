@@ -1,4 +1,6 @@
 TODO
+1.0.1
+- imprement midi recording and playback
 
 X.X.X
 - implement textual

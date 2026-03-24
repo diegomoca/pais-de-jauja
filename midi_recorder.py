@@ -1,27 +1,36 @@
 import time
 import mido
 
-mid = mido.MidiFile()
-track = mido.MidiTrack()
-mid.tracks.append(track)
+inports = [[None]]
+initTime = [None]
+lastTime = [None]
 
-initTime = time.time()
-lastTime = [0.0]
+midiFile = [None]
+track = [None]
 
 def on_midi(msg):
-    currTime = time.time() - initTime
+    currTime = time.time() - initTime[0]
     deltaTime = currTime - lastTime[0]
     lastTime[0] = currTime
-    data = msg.dict()
-    data["time"] = mido.second2tick(deltaTime, 480, 500000)
-    track.append(mido.Message(**data))
+    msg = msg.dict()
+    msg["time"] = mido.second2tick(deltaTime, 480, 500000)
+    track[0].append(mido.Message(**msg))
     print(msg)
 
-inports = [mido.open_input(name, callback=on_midi) for name in mido.get_input_names()]
+def start_midi_recording():
+    initTime[0] = time.time()
+    lastTime[0] = 0.0
+    midiFile[0] = mido.MidiFile()
+    track[0] = mido.MidiTrack()
+    midiFile[0].tracks.append(track[0])
+    inports[0] = [mido.open_input(name, callback=on_midi) for name in mido.get_input_names()]
 
-while True:
-    if input() == "end":
-        for inport in inports:
-            inport.close()
-        mid.save("test.mid")
-        break
+def stop_midi_recording(filename):
+    for inport in inports[0]:
+        inport.close()
+    currTime = time.time() - initTime[0]
+    deltaTime = currTime - lastTime[0]
+    print(deltaTime)
+    deltaTime = int(mido.second2tick(deltaTime, 480, 500000))
+    track[0].append(mido.MetaMessage('end_of_track', time=deltaTime))
+    midiFile[0].save(filename)

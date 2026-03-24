@@ -1,6 +1,7 @@
 TODO
 1.0.1
 - imprement midi recording and playback
+    X stop midi recording on exit
 
 X.X.X
 - implement textual
@@ -10,6 +11,7 @@ X.X.X
 - learn openFrameworks
 - record buses
 - create agent
+- find better logic for multiword commands
 
 DONE
 X create main repl app

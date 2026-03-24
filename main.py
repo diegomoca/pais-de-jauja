@@ -7,9 +7,8 @@ from osc4py3 import oscbuildparse
 from osc4py3.as_eventloop import *
 from osc4py3 import oscmethod as osm # needed to receive OSC
 
-
 import instruments.harpa.source.frequencies as harpa
-
+from midi_recorder import start_midi_recording, stop_midi_recording
 
 console = Console()
 
@@ -20,7 +19,8 @@ class Input(Prompt):
 console.rule('[bold]WELLCOME')
 
 instrList = ['harpa']
-commands = ['create', 'destroy', 'keyboardActivate', 'keyboardDeactivate', 'ccActivate', 'ccDeactivate', 'instrument']
+commands = ['create', 'destroy', 'keyboard', 'cc', 'activate',
+            'deactivate', 'midi', 'recording', 'playback', 'play', 'stop']
 names = []
 instrDict = {}
 # set() is list without duplicates and order
@@ -94,11 +94,15 @@ print("OSC Client started. Ready to send messages!")
 console.print(f'[green]󰼁 OSC connection successfull![/green]\n')
 
 exit_flag = [False]
+midiRec = [False]
+midiPlay = [False]
+midiRecFileName = [None]
+midiPlayFileName = [None]
 while True:
     if exit_flag[0]:
         userInput = ['exit']
     else:
-        userInput = Input.ask('󰼂', choices=(names + ['create', 'exit']), console=console).split()
+        userInput = Input.ask('󰼂', choices=(names + ['create', 'midi', 'exit']), console=console).split()
     match userInput[0]:
         case 'create':
             if len(userInput) == 1:
@@ -144,6 +148,73 @@ while True:
                             time.sleep(0.01)
                         created_flag[0] = False
                         console.print(f'[green]󰼁 {instanceName} created![/green]\n')
+
+        case 'midi':
+            if len(userInput) == 1:
+                userInput = Input.ask('[blue]󰼂 midi[/blue]', choices=['recording', 'playback', 'home', 'exit'], console=console).split()
+                if userInput[0] == 'exit':
+                    exit_flag[0] = True
+                    continue
+                elif userInput[0] == 'home':
+                    continue
+                match userInput[0]:
+                    case 'recording':
+                        if midiRec[0] == False:
+                            userInput = Input.ask('[blue]󰼂 midi recording', choices=['start', 'home', 'exit'], console=console).split()
+                            if userInput[0] == 'exit':
+                                exit_flag[0] = True
+                                continue
+                            elif userInput[0] == 'home':
+                                continue
+                            if len(userInput) == 1 and userInput[0] == 'start':
+                                midiRecFileName[0] = Input.ask('[blue]󰼂 file name', console=console)
+                                if userInput[0] == 'exit':
+                                    exit_flag[0] = True
+                                    continue
+                                elif userInput[0] == 'home':
+                                    continue
+                                midiRec[0] = True
+                                start_midi_recording()
+                                console.print(f'[green]󰼁 midi recording of [italic]\'{midiRecFileName[0]}\'[/green][/italic]: [cyan2 italic]started\n')
+                        elif midiRec[0] == True:
+                            userInput = Input.ask('[blue]󰼂 midi recording', choices=['stop', 'home', 'exit'], console=console).split()
+                            if userInput[0] == 'exit':
+                                exit_flag[0] = True
+                                continue
+                            elif userInput[0] == 'home':
+                                continue
+                            if len(userInput) == 1 and userInput[0] == 'stop':
+                                midiRec[0] = False
+                                stop_midi_recording(midiRecFileName[0])
+                                console.print(f'[green]󰼁 midi recording of [italic]\'{midiRecFileName[0]}\'[/green][/italic]: [orange1 italic]stopped\n')
+
+                    case 'playback':
+                        if midiPlay[0] == False:
+                            userInput = Input.ask('[blue]󰼂 midi playback', choices=['start', 'home', 'exit'], console=console).split()
+                            if userInput[0] == 'exit':
+                                exit_flag[0] = True
+                                continue
+                            elif userInput[0] == 'home':
+                                continue
+                            if len(userInput) == 1 and userInput[0] == 'start':
+                                midiPlayFileName[0] = Input.ask('[blue]󰼂 file name', console=console)
+                                if userInput[0] == 'exit':
+                                    exit_flag[0] = True
+                                    continue
+                                elif userInput[0] == 'home':
+                                    continue
+                                midiPlay[0] = True
+                                console.print(f'[green]󰼁 midi playback of [italic]\'{midiPlayFileName[0]}\'[/green][/italic]: [cyan2 italic]started\n')
+                        elif midiPlay[0] == True:
+                            userInput = Input.ask('[blue]󰼂 midi playback', choices=['stop', 'home', 'exit'], console=console).split()
+                            if userInput[0] == 'exit':
+                                exit_flag[0] = True
+                                continue
+                            elif userInput[0] == 'home':
+                                continue
+                            if len(userInput) == 1 and userInput[0] == 'stop':
+                                midiPlay[0] = False
+                                console.print(f'[green]󰼁 midi playback of [italic]\'{midiPlayFileName[0]}\'[/green][/italic]: [orange1 italic]stopped\n')
 
         case name if name in names:
             if len(userInput) == 1:
@@ -215,6 +286,9 @@ while True:
                             del instrDict[name]
 
         case 'exit':
+            if midiRec[0] == True:
+                stop_midi_recording(midiRecFileName[0])
+                console.print(f'[green]󰼁 midi recording of [italic]\'{midiRecFileName[0]}\'[/green][/italic]: [orange1 italic]stopped\n')
             osc_send(oscbuildparse.OSCMessage('/instruments', ',s', ['kill']), 'scOSCClient')
             time.sleep(1.0)
             finished = True

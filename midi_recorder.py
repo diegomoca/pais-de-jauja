@@ -31,6 +31,6 @@ def stop_midi_recording(filename):
     currTime = time.time() - initTime[0]
     deltaTime = currTime - lastTime[0]
     print(deltaTime)
-    deltaTime = int(mido.second2tick(deltaTime, 480, 500000))
+    deltaTime = mido.second2tick(deltaTime, 480, 500000)
     track[0].append(mido.MetaMessage('end_of_track', time=deltaTime))
     midiFile[0].save(filename)

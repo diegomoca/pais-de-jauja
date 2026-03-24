@@ -1,6 +1,8 @@
 import threading
 import subprocess
 import time
+from pathlib import Path
+
 from rich.prompt import Prompt
 from rich.console import Console
 from osc4py3 import oscbuildparse
@@ -9,6 +11,7 @@ from osc4py3 import oscmethod as osm # needed to receive OSC
 
 import instruments.harpa.source.frequencies as harpa
 from midi_recorder import start_midi_recording, stop_midi_recording
+from midi_playback import start_midi_playback, stop_midi_playback, outport
 
 console = Console()
 
@@ -167,12 +170,13 @@ while True:
                             elif userInput[0] == 'home':
                                 continue
                             if len(userInput) == 1 and userInput[0] == 'start':
-                                midiRecFileName[0] = Input.ask('[blue]󰼂 file name', console=console)
+                                userInput[0] = Input.ask('[blue]󰼂 file name', console=console)
                                 if userInput[0] == 'exit':
                                     exit_flag[0] = True
                                     continue
                                 elif userInput[0] == 'home':
                                     continue
+                                midiRecFileName[0] = userInput[0]
                                 midiRec[0] = True
                                 start_midi_recording()
                                 console.print(f'[green]󰼁 midi recording of [italic]\'{midiRecFileName[0]}\'[/green][/italic]: [cyan2 italic]started\n')
@@ -197,14 +201,29 @@ while True:
                             elif userInput[0] == 'home':
                                 continue
                             if len(userInput) == 1 and userInput[0] == 'start':
-                                midiPlayFileName[0] = Input.ask('[blue]󰼂 file name', console=console)
+                                userInput[0] = Input.ask('[blue]󰼂 file name', console=console)
                                 if userInput[0] == 'exit':
                                     exit_flag[0] = True
                                     continue
                                 elif userInput[0] == 'home':
                                     continue
+                                # midiPlayFileName[0] = userInput[0]
+                                # if file_path.exists():
+                                #     start_midi_playback(midiPlayFileName[0])
+                                #     midiPlay[0] = True
+                                #     console.print(f'[green]󰼁 midi playback of [italic]\'{midiPlayFileName[0]}\'[/green][/italic]: [cyan2 italic]started\n')
+                                file_path = Path(userInput[0])
+                                while not file_path.exists():
+                                    # TODO make it so that you can exit and go back from this and similar submenus
+                                    console.print(f'[red][italic]\'{userInput[0]}\'[/italic] does not exist')
+                                    userInput = Input.ask('[blue]󰼂 file name', console=console).split()
+                                    file_path = Path(userInput[0])
+                                midiPlayFileName[0] = userInput[0]
+                                threading.Thread(target=start_midi_playback, args=(midiPlayFileName[0],)).start()
                                 midiPlay[0] = True
                                 console.print(f'[green]󰼁 midi playback of [italic]\'{midiPlayFileName[0]}\'[/green][/italic]: [cyan2 italic]started\n')
+                                
+                                
                         elif midiPlay[0] == True:
                             userInput = Input.ask('[blue]󰼂 midi playback', choices=['stop', 'home', 'exit'], console=console).split()
                             if userInput[0] == 'exit':
@@ -213,6 +232,7 @@ while True:
                             elif userInput[0] == 'home':
                                 continue
                             if len(userInput) == 1 and userInput[0] == 'stop':
+                                stop_midi_playback()
                                 midiPlay[0] = False
                                 console.print(f'[green]󰼁 midi playback of [italic]\'{midiPlayFileName[0]}\'[/green][/italic]: [orange1 italic]stopped\n')
 
@@ -228,7 +248,7 @@ while True:
                     case 'keyboard':
                         address = instrDict[name]['instanceAddress'] + '/keyboard'
                         if instrDict[name]['keyboardActivated'] == False:
-                            userInput = Input.ask(f'[blue]󰼂 {name} [bold]\[keyboard][/bold] (deactivated)[/blue]', choices=['activate', 'home', 'exit'], console=console).split()
+                            userInput = Input.ask(f'[blue]󰼂 {name} [bold]\\[keyboard][/bold] (deactivated)[/blue]', choices=['activate', 'home', 'exit'], console=console).split()
                             if userInput[0] == 'exit':
                                 exit_flag[0] = True
                                 continue
@@ -238,9 +258,9 @@ while True:
                                 osc_send(oscbuildparse.OSCMessage(address, ',s', ['activate']), 'scOSCClient')
                                 # TODO make it so that it needs confirmation from supercollider to execute
                                 instrDict[name]['keyboardActivated'] = True
-                                console.print(f'[green]󰼁 {name} [bold]\[keyboard][/green][/bold]: [cyan2 italic]activated\n')
+                                console.print(f'[green]󰼁 {name} [bold]\\[keyboard][/green][/bold]: [cyan2 italic]activated\n')
                         elif instrDict[name]['keyboardActivated'] == True:
-                            userInput = Input.ask(f'[blue]󰼂 {name} [bold]\[keyboard][/bold] (activated)[/blue]', choices=['deactivate', 'home', 'exit'], console=console).split()
+                            userInput = Input.ask(f'[blue]󰼂 {name} [bold]\\[keyboard][/bold] (activated)[/blue]', choices=['deactivate', 'home', 'exit'], console=console).split()
                             if userInput[0] == 'exit':
                                 exit_flag[0] = True
                                 continue
@@ -250,11 +270,11 @@ while True:
                                 osc_send(oscbuildparse.OSCMessage(address, ',s', ['deactivate']), 'scOSCClient')
                                 # TODO make it so that it needs confirmation from supercollider to execute
                                 instrDict[name]['keyboardActivated'] = False
-                                console.print(f'[green]󰼁 {name} [bold]\[keyboard][/green][/bold]: [orange1 italic]deactivated\n')
+                                console.print(f'[green]󰼁 {name} [bold]\\[keyboard][/green][/bold]: [orange1 italic]deactivated\n')
                     case 'cc':
                         address = instrDict[name]['instanceAddress'] + '/cc'
                         if instrDict[name]['ccActivated'] == False:
-                            userInput = Input.ask(f'[blue]󰼂 {name} [bold]\[cc][/bold] (deactivated)[/blue]', choices=['activate', 'home', 'exit'], console=console).split()
+                            userInput = Input.ask(f'[blue]󰼂 {name} [bold]\\[cc][/bold] (deactivated)[/blue]', choices=['activate', 'home', 'exit'], console=console).split()
                             if userInput[0] == 'exit':
                                 exit_flag[0] = True
                                 continue
@@ -264,9 +284,9 @@ while True:
                                 osc_send(oscbuildparse.OSCMessage(address, ',s', ['activate']), 'scOSCClient')
                                 # TODO make it so that it needs confirmation from supercollider to execute
                                 instrDict[name]['ccActivated'] = True
-                                console.print(f'[green]󰼁 {name} [bold]\[cc][/green][/bold]: [cyan2 italic]activated\n')
+                                console.print(f'[green]󰼁 {name} [bold]\\[cc][/green][/bold]: [cyan2 italic]activated\n')
                         elif instrDict[name]['ccActivated'] == True:
-                            userInput = Input.ask(f'[blue]󰼂 {name} [bold]\[cc][/bold] (activated)[/blue]', choices=['deactivate', 'home', 'exit'], console=console).split()
+                            userInput = Input.ask(f'[blue]󰼂 {name} [bold]\\[cc][/bold] (activated)[/blue]', choices=['deactivate', 'home', 'exit'], console=console).split()
                             if userInput[0] == 'exit':
                                 exit_flag[0] = True
                                 continue
@@ -276,7 +296,7 @@ while True:
                                 osc_send(oscbuildparse.OSCMessage(address, ',s', ['deactivate']), 'scOSCClient')
                                 # TODO make it so that it needs confirmation from supercollider to execute
                                 instrDict[name]['ccActivated'] = False
-                                console.print(f'[green]󰼁 {name} [bold]\[cc][/green][/bold]: [orange1 italic]deactivated\n')
+                                console.print(f'[green]󰼁 {name} [bold]\\[cc][/green][/bold]: [orange1 italic]deactivated\n')
                     case 'destroy':
                         address = instrDict[name]['instanceAddress']
                         if len(userInput) == 1:
@@ -286,6 +306,8 @@ while True:
                             del instrDict[name]
 
         case 'exit':
+            outport.panic()
+            outport.close()
             if midiRec[0] == True:
                 stop_midi_recording(midiRecFileName[0])
                 console.print(f'[green]󰼁 midi recording of [italic]\'{midiRecFileName[0]}\'[/green][/italic]: [orange1 italic]stopped\n')

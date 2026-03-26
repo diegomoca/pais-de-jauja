@@ -1,4 +1,9 @@
 TODO
+
+MACHINE LEARNING
+- implemet direct control and reading of parameters via osc
+- create midi and osc datasets
+
 1.0.1
 
 X.X.X

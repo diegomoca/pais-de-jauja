@@ -3,6 +3,7 @@ TODO
 MACHINE LEARNING
 - implemet direct control and reading of parameters via osc
 - create midi and osc datasets
+- create algorithms to find settings with largest ratio training_accuracy:test_accuracy
 
 1.0.1
 

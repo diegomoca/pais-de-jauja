@@ -4,6 +4,11 @@ MACHINE LEARNING
 - implemet direct control and reading of parameters via osc
 - create midi and osc datasets
 - create algorithms to find settings with largest ratio training_accuracy:test_accuracy
+- make the algorith of higher order. eg: it calculates the next message based on the previous 10 messages
+- create new artificial features like last note on, last note off, last control number
+- a model that instead of generating each message parameter individualy, generates a comple message
+by taking the input message, find the most similar message from the set and outputs the next message
+the next message from the set (more accuracy but less variation)
 
 1.0.1
 

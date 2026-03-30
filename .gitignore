@@ -12,6 +12,7 @@ __pycache__/
 
 # Project assets not meant for version control
 *.mp3
+*.mp4
 *.wav
 *.mid
 *.csv
